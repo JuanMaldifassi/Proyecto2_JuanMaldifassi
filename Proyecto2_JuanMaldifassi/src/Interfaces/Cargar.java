@@ -5,6 +5,10 @@
 package Interfaces;
 
 import Archivos.FileChooser;
+import EDD.ArbolAVL;
+import EDD.HashTable;
+import Funciones.CargarArchivo;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -15,8 +19,12 @@ public class Cargar extends javax.swing.JFrame {
     /**
      * Creates new form Cargar
      */
-   private FileChooser fileChooser = new FileChooser(this);
-   private String txt = "";
+    private FileChooser fileChooser = new FileChooser(this);
+    private CargarArchivo cargarArch = new CargarArchivo();
+    private String txt = "";
+
+    public static HashTable ADN = new HashTable(100);
+    public static ArbolAVL arbolAVL = new ArbolAVL();
 
     public Cargar() {
         initComponents();
@@ -101,8 +109,39 @@ public class Cargar extends javax.swing.JFrame {
     }//GEN-LAST:event_regresarActionPerformed
 
     private void cargarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cargarActionPerformed
-        Menu menu = new Menu();
-        this.dispose();
+        cargarArch.setTxt(txt);
+        cargarArch.setTabla(ADN);
+        cargarArch.setArbolFrecuencias(arbolAVL);
+
+        int result = cargarArch.cargar();
+        switch (result) {
+            case 1:
+                boolean cargarA = cargarArch.cargarArbolFrecuencias();
+                if (cargarA) {
+                    Menu menu = new Menu();
+                    this.dispose();
+                }else{
+                    JOptionPane.showMessageDialog(null, "Hubo un error al Cargar el Arbol");
+                }
+                break;
+            case 0:
+                JOptionPane.showMessageDialog(null, "El txt esta vacio o es null");
+                break;
+            case -1:
+                JOptionPane.showMessageDialog(null, "La longitud de la cadena no es multiplo de 3");
+                break;
+            case -2:
+                JOptionPane.showMessageDialog(null, "La secuencia no es valida");
+                break;
+            default:
+                break;
+        }
+
+//        System.out.println(cargarArch.getTxt());
+//        System.out.println("\n");
+//        System.out.println(cargarArch.getTabla().mostrarTabla());
+        System.out.println(ADN.reporteColisiones());
+
     }//GEN-LAST:event_cargarActionPerformed
 
     /**
