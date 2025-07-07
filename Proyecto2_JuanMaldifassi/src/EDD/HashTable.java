@@ -122,16 +122,24 @@ public class HashTable {
         int indice = hash(patron);
         PatronADN patronExistente = buscarPatron(patron);
 
+        // Verificar colisión ANTES de cualquier operación
+        boolean hayColision = !tabla[indice].isEmpty();
+
         if (patronExistente != null) {
             // El patrón ya existe, actualizar frecuencia y posiciones
             patronExistente.incrementarFrecuencia();
             patronExistente.agregarPosicion(posicion);
+
+            // Contar colisión si hay otros patrones en el mismo bucket
+            if (hayColision && tabla[indice].getSize() > 1) {
+                colisiones++;
+            }
         } else {
-            // Nuevo patrón, crear nuevo PatronADN
+            // Nuevo patrón
             PatronADN nuevoPatron = new PatronADN(patron, posicion);
 
-            // Verificar si habrá colisión antes de insertar
-            if (!tabla[indice].isEmpty()) {
+            // Contar colisión si el bucket no está vacío
+            if (hayColision) {
                 colisiones++;
             }
 
@@ -158,6 +166,24 @@ public class HashTable {
             actual = actual.getPnext();
         }
         return null;
+    }
+    
+    public Lista buscarPorInicial(String inicial){
+        Lista listaCoincidencia = new Lista();
+        for (int i = 0; i < capacidad; i++) {
+            if (tabla[i] != null && !tabla[i].isEmpty()) {
+                Nodo actual = tabla[i].getpFirst();
+                while (actual != null) {
+                    PatronADN patron = (PatronADN) actual.getDato();
+                    if(Character.toString(patron.getPatron().charAt(0)).equalsIgnoreCase(inicial)){
+                        listaCoincidencia.insertFinal(patron);
+                    }
+                    actual = actual.getPnext();
+                }
+            }
+        }
+        
+        return listaCoincidencia;
     }
 
     /**
@@ -187,75 +213,6 @@ public class HashTable {
     }
 
     /**
-     * Genera un reporte de todos los patrones con su frecuencia
-     *
-     * @return String con el reporte ordenado por frecuencia
-     */
-    public String reportePatronesPorFrecuencia() {
-        // Primero recolectamos todos los patrones en una lista
-        Lista todosPatrones = new Lista();
-
-        // Recorrer toda la tabla hash
-        for (int i = 0; i < capacidad; i++) {
-            if (tabla[i] != null) {
-                Nodo actual = tabla[i].getpFirst();
-                while (actual != null) {
-                    todosPatrones.insertFinal(actual.getDato());
-                    actual = actual.getPnext();
-                }
-
-            }
-        }
-
-        // Ordenar la lista por frecuencia (implementación de burbuja)
-        ordenarListaPorFrecuencia(todosPatrones);
-
-        // Generar el reporte
-        StringBuilder reporte = new StringBuilder();
-        Nodo actual = todosPatrones.getpFirst();
-        while (actual != null) {
-            PatronADN patron = (PatronADN) actual.getDato();
-            reporte.append("Patrón: ").append(patron.getPatron())
-                    .append(" - Frecuencia: ").append(patron.getFrecuencia())
-                    .append(" - Posiciones: ").append(patron.getPosiciones())
-                    .append("\n");
-            actual = actual.getPnext();
-        }
-
-        return reporte.toString();
-    }
-
-    private void ordenarListaPorFrecuencia(Lista lista) {
-        if (!lista.isEmpty() && lista.getSize() != 1) {
-
-            Nodo actual = lista.getpFirst();
-            while (actual != null) {
-                Nodo max = actual;
-                Nodo temp = actual.getPnext();
-
-                while (temp != null) {
-                    PatronADN pTemp = (PatronADN) temp.getDato();
-                    PatronADN pMax = (PatronADN) max.getDato();
-
-                    if (pTemp.getFrecuencia() > pMax.getFrecuencia()) {
-                        max = temp;
-                    }
-                    temp = temp.getPnext();
-                }
-
-                // Intercambiar los datos de los nodos
-                if (max != actual) {
-                    Object datoTemp = actual.getDato();
-                    actual.setDato(max.getDato());
-                    max.setDato(datoTemp);
-                }
-
-                actual = actual.getPnext();
-            }
-        }
-    }
-
-    /**
      * Genera un reporte de colisiones en la tabla hash
      *
      * @return String con información sobre las colisiones
@@ -267,6 +224,7 @@ public class HashTable {
         for (int i = 0; i < capacidad; i++) {
             int elementosEnBucket = tabla[i].getSize();
             if (elementosEnBucket > 1) {
+                System.out.println(i);
                 bucketsConColisiones++;
                 detalles.append("Bucket ").append(i).append(": ")
                         .append(elementosEnBucket).append(" elementos\n");
@@ -284,54 +242,6 @@ public class HashTable {
         return "Total de colisiones: " + colisiones
                 + "\nBuckets con colisiones: " + bucketsConColisiones
                 + "\n\nDetalle de colisiones:\n" + detalles.toString();
-    }
-
-    /**
-     * Obtiene el patrón más frecuente
-     *
-     * @return El patrón con mayor frecuencia
-     */
-    public String obtenerPatronMasFrecuente() {
-        String patronMasFrecuente = null;
-        int maxFrecuencia = 0;
-
-        for (int i = 0; i < capacidad; i++) {
-            Nodo actual = tabla[i].getpFirst();
-            while (actual != null) {
-                PatronADN p = (PatronADN) actual.getDato();
-                if (p.getFrecuencia() > maxFrecuencia) {
-                    maxFrecuencia = p.getFrecuencia();
-                    patronMasFrecuente = p.getPatron();
-                }
-                actual = actual.getPnext();
-            }
-        }
-
-        return patronMasFrecuente;
-    }
-
-    /**
-     * Obtiene el patrón menos frecuente
-     *
-     * @return El patrón con menor frecuencia (mínimo 1 ocurrencia)
-     */
-    public String obtenerPatronMenosFrecuente() {
-        String patronMenosFrecuente = null;
-        int minFrecuencia = Integer.MAX_VALUE;
-
-        for (int i = 0; i < capacidad; i++) {
-            Nodo actual = tabla[i].getpFirst();
-            while (actual != null) {
-                PatronADN p = (PatronADN) actual.getDato();
-                if (p.getFrecuencia() < minFrecuencia) {
-                    minFrecuencia = p.getFrecuencia();
-                    patronMenosFrecuente = p.getPatron();
-                }
-                actual = actual.getPnext();
-            }
-        }
-
-        return (minFrecuencia != Integer.MAX_VALUE) ? patronMenosFrecuente : null;
     }
 
     /**
@@ -363,6 +273,130 @@ public class HashTable {
                     actual = actual.getPnext();
                 }
             }
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Obtiene una lista de todos los patrones ordenados por frecuencia (de
+     * mayor a menor)
+     *
+     * @return Lista ordenada de patrones
+     */
+    public Lista obtenerPatronesOrdenadosPorFrecuencia() {
+        Lista todosPatrones = new Lista();
+
+        // 1. Recolectar todos los patrones (O(n))
+        for (int i = 0; i < capacidad; i++) {
+            if (tabla[i] != null) {
+                Nodo actual = tabla[i].getpFirst();
+                while (actual != null) {
+                    todosPatrones.insertFinal(actual.getDato());
+                    actual = actual.getPnext();
+                }
+            }
+        }
+
+        // 2. Ordenar usando mergesort (O(n log n) en el mejor caso)
+        return mergeSortPorFrecuencia(todosPatrones);
+    }
+
+    /**
+     * Implementación de mergesort para ordenar por frecuencia
+     */
+    private Lista mergeSortPorFrecuencia(Lista lista) {
+        if (lista.getSize() <= 1) {
+            return lista;
+        }
+
+        // Dividir la lista en dos
+        Lista izquierda = new Lista();
+        Lista derecha = new Lista();
+        Nodo actual = lista.getpFirst();
+
+        for (int i = 0; i < lista.getSize() / 2; i++) {
+            izquierda.insertFinal(actual.getDato());
+            actual = actual.getPnext();
+        }
+
+        while (actual != null) {
+            derecha.insertFinal(actual.getDato());
+            actual = actual.getPnext();
+        }
+
+        // Ordenar recursivamente
+        izquierda = mergeSortPorFrecuencia(izquierda);
+        derecha = mergeSortPorFrecuencia(derecha);
+
+        // Combinar
+        return merge(izquierda, derecha);
+    }
+
+    /**
+     * Combina dos listas ordenadas
+     */
+    private Lista merge(Lista izquierda, Lista derecha) {
+        Lista resultado = new Lista();
+        Nodo nodoIzq = izquierda.getpFirst();
+        Nodo nodoDer = derecha.getpFirst();
+
+        while (nodoIzq != null && nodoDer != null) {
+            PatronADN patronIzq = (PatronADN) nodoIzq.getDato();
+            PatronADN patronDer = (PatronADN) nodoDer.getDato();
+
+            if (patronIzq.getFrecuencia() >= patronDer.getFrecuencia()) {
+                resultado.insertFinal(patronIzq);
+                nodoIzq = nodoIzq.getPnext();
+            } else {
+                resultado.insertFinal(patronDer);
+                nodoDer = nodoDer.getPnext();
+            }
+        }
+
+        while (nodoIzq != null) {
+            resultado.insertFinal(nodoIzq.getDato());
+            nodoIzq = nodoIzq.getPnext();
+        }
+
+        while (nodoDer != null) {
+            resultado.insertFinal(nodoDer.getDato());
+            nodoDer = nodoDer.getPnext();
+        }
+
+        return resultado;
+    }
+
+    /**
+     * Muestra la lista de patrones ordenados por frecuencia
+     *
+     * @return String con el reporte formateado
+     */
+    public String mostrarPatronesOrdenados() {
+        Lista ordenados = obtenerPatronesOrdenadosPorFrecuencia();
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("=== PATRONES ORDENADOS POR FRECUENCIA ===\n");
+
+        Nodo actual = ordenados.getpFirst();
+        while (actual != null) {
+            PatronADN patron = (PatronADN) actual.getDato();
+            sb.append(patron.getPatron())
+                    .append(" \n- Frecuencia: ").append(patron.getFrecuencia())
+                    .append(" \n- Posiciones: ");
+
+            // Mostrar posiciones
+            Nodo posNodo = patron.getPosiciones().getpFirst();
+            while (posNodo != null) {
+                sb.append(posNodo.getDato());
+                if (posNodo.getPnext() != null) {
+                    sb.append(", ");
+                }
+                posNodo = posNodo.getPnext();
+            }
+
+            sb.append("\n\n");
+            actual = actual.getPnext();
         }
 
         return sb.toString();

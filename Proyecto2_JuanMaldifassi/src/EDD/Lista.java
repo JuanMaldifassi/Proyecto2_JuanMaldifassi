@@ -12,7 +12,7 @@ import javax.swing.JOptionPane;
  */
 public class Lista {
     
-    private Nodo pFirst; //nodo apuntador al primero
+     private Nodo pFirst; //nodo apuntador al primero
     private int size; //tamaño de la lista
     
     /**
@@ -116,7 +116,7 @@ public class Lista {
             }
             return expresion;
         }
-        return "Lista vacia";
+        return "No se encontraron Patrones.";
     }
     
     /**
